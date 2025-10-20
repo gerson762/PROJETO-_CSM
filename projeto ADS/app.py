@@ -1,12 +1,17 @@
 import uuid
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from bcrypt import hashpw, gensalt, checkpw
+import hashlib
 import random
 import string
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+# Função auxiliar para simular o hashing de senha
+def hash_password(password):
+    # Usa SHA256 para simular um hash seguro (nativo do Python)
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 # =========================================================
 # SIMULAÇÃO DO BANCO DE DADOS (PARA FUNCIONAR NO VERCEL)
@@ -17,7 +22,7 @@ USERS = {
     "test@educaprime.com": {
         "id": 1,
         "email": "test@educaprime.com",
-        "password_hash": hashpw("senha123".encode('utf-8'), gensalt()).decode('utf-8'),
+        "password_hash": hash_password("senha123"), # Usa hashlib
         "full_name": "Usuário de Teste Admin",
         "role": "admin",
         "recovery_token": None
@@ -25,7 +30,7 @@ USERS = {
     "leitor@educaprime.com": {
         "id": 2,
         "email": "leitor@educaprime.com",
-        "password_hash": hashpw("senha123".encode('utf-8'), gensalt()).decode('utf-8'),
+        "password_hash": hash_password("senha123"), # Usa hashlib
         "full_name": "Usuário Leitor",
         "role": "leitor",
         "recovery_token": None
@@ -58,7 +63,7 @@ def login():
 
     user = USERS.get(email)
 
-    if user and checkpw(password.encode('utf-8'), user["password_hash"].encode('utf-8')):
+    if user and user["password_hash"] == hash_password(password): # Comparação usando hashlib
         user_role = user["role"]
         return jsonify({"success": True, "message": "Login realizado com sucesso!", "role": user_role})
     else:
@@ -76,9 +81,8 @@ def register():
     if email in USERS:
         return jsonify({"success": False, "message": "Este e-mail já está cadastrado."})
 
-    hashed_password = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
+    hashed_password = hash_password(password)
 
-    # Adiciona novo usuário com role 'leitor' por padrão
     USERS[email] = {
         "id": NEXT_USER_ID,
         "email": email,
@@ -90,7 +94,6 @@ def register():
     NEXT_USER_ID += 1
     return jsonify({"success": True, "message": "Usuário cadastrado com sucesso!"})
 
-
 # Rota para solicitar recuperação de senha (Etapa 1)
 @app.route('/forgot_password', methods=['POST'])
 def forgot_password():
@@ -101,7 +104,6 @@ def forgot_password():
         token = ''.join(random.choices(string.digits, k=6))
         USERS[email]["recovery_token"] = token
         
-        # O token real seria enviado por email, mas é printado aqui para testes
         print(f"CÓDIGO DE RECUPERAÇÃO ENVIADO PARA {email}: {token}")
         return jsonify({"success": True, "message": "Código de recuperação enviado!"})
     else:
@@ -118,7 +120,7 @@ def reset_password():
     user = USERS.get(email)
 
     if user and user["recovery_token"] == token:
-        user["password_hash"] = hashpw(new_password.encode('utf-8'), gensalt()).decode('utf-8')
+        user["password_hash"] = hash_password(new_password)
         user["recovery_token"] = None
         return jsonify({"success": True, "message": "Senha redefinida com sucesso!"})
     else:
@@ -140,7 +142,6 @@ def handle_courses():
         if not course_name:
             return jsonify({"success": False, "message": "O nome do curso é obrigatório."}), 400
 
-        # Adiciona novo curso
         new_id = NEXT_COURSE_ID
         COURSES[new_id] = {"id": new_id, "course_name": course_name}
         NEXT_COURSE_ID += 1
@@ -176,5 +177,3 @@ def handle_course(course_id):
             return jsonify({"success": True, "message": "Curso excluído com sucesso!"})
         else:
             return jsonify({"success": False, "message": "Curso não encontrado."}), 404
-
-# A Vercel usará a variável 'app' para rodar a aplicação.
