@@ -1,4 +1,4 @@
-import sqlite3
+import uuid
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from bcrypt import hashpw, gensalt, checkpw
@@ -8,38 +8,43 @@ import string
 app = Flask(__name__)
 CORS(app)
 
-# Função para inicializar o banco de dados
-def init_db():
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            full_name TEXT,
-            recovery_token TEXT
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Courses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            course_name TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
+# =========================================================
+# SIMULAÇÃO DO BANCO DE DADOS (PARA FUNCIONAR NO VERCEL)
+# =========================================================
 
-    test_email = "test@educaprime.com"
-    cursor.execute("SELECT * FROM Users WHERE email = ?", (test_email,))
-    if not cursor.fetchone():
-        password = "senha123"
-        hashed_password = hashpw(password.encode('utf-8'), gensalt())
-        cursor.execute("INSERT INTO Users (email, password_hash, full_name) VALUES (?, ?, ?)",
-                       (test_email, hashed_password.decode('utf-8'), "Usuário de Teste"))
-        conn.commit()
-    conn.close()
+# Armazenamento em memória (os dados são perdidos após o deploy)
+USERS = {
+    "test@educaprime.com": {
+        "id": 1,
+        "email": "test@educaprime.com",
+        "password_hash": hashpw("senha123".encode('utf-8'), gensalt()).decode('utf-8'),
+        "full_name": "Usuário de Teste Admin",
+        "role": "admin",
+        "recovery_token": None
+    },
+    "leitor@educaprime.com": {
+        "id": 2,
+        "email": "leitor@educaprime.com",
+        "password_hash": hashpw("senha123".encode('utf-8'), gensalt()).decode('utf-8'),
+        "full_name": "Usuário Leitor",
+        "role": "leitor",
+        "recovery_token": None
+    }
+}
+NEXT_USER_ID = 3
 
-# Rota para servir os arquivos HTML, CSS e JS
+COURSES = {
+    1: {"id": 1, "course_name": "GESTÃO DE PROJETOS"},
+    2: {"id": 2, "course_name": "PROGRAMAÇAO EM PYTHON"},
+    3: {"id": 3, "course_name": "MARKETING DIGITAL"}
+}
+NEXT_COURSE_ID = 4
+
+# =========================================================
+# ROTAS DO FLASK
+# =========================================================
+
+# Rota para servir os arquivos HTML, CSS e JS (Necessário para o Vercel)
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory('.', filename)
@@ -51,44 +56,40 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT password_hash FROM Users WHERE email = ?", (email,))
-    result = cursor.fetchone()
-    conn.close()
+    user = USERS.get(email)
 
-    if result and checkpw(password.encode('utf-8'), result[0].encode('utf-8')):
-        return jsonify({"success": True, "message": "Login realizado com sucesso!"})
+    if user and checkpw(password.encode('utf-8'), user["password_hash"].encode('utf-8')):
+        user_role = user["role"]
+        return jsonify({"success": True, "message": "Login realizado com sucesso!", "role": user_role})
     else:
         return jsonify({"success": False, "message": "Login ou senha incorretos."})
 
 # Rota para cadastro de novo usuário
 @app.route('/register', methods=['POST'])
 def register():
+    global USERS, NEXT_USER_ID
     data = request.get_json()
     full_name = data.get('full_name')
     email = data.get('email')
     password = data.get('password')
 
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT email FROM Users WHERE email = ?", (email,))
-    if cursor.fetchone():
-        conn.close()
+    if email in USERS:
         return jsonify({"success": False, "message": "Este e-mail já está cadastrado."})
 
-    hashed_password = hashpw(password.encode('utf-8'), gensalt())
+    hashed_password = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
 
-    try:
-        cursor.execute("INSERT INTO Users (full_name, email, password_hash) VALUES (?, ?, ?)",
-                       (full_name, email, hashed_password.decode('utf-8')))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Usuário cadastrado com sucesso!"})
-    except sqlite3.IntegrityError:
-        conn.close()
-        return jsonify({"success": False, "message": "Erro ao cadastrar. Tente novamente."})
+    # Adiciona novo usuário com role 'leitor' por padrão
+    USERS[email] = {
+        "id": NEXT_USER_ID,
+        "email": email,
+        "password_hash": hashed_password,
+        "full_name": full_name,
+        "role": "leitor",
+        "recovery_token": None
+    }
+    NEXT_USER_ID += 1
+    return jsonify({"success": True, "message": "Usuário cadastrado com sucesso!"})
+
 
 # Rota para solicitar recuperação de senha (Etapa 1)
 @app.route('/forgot_password', methods=['POST'])
@@ -96,20 +97,14 @@ def forgot_password():
     data = request.get_json()
     email = data.get('email')
 
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT email FROM Users WHERE email = ?", (email,))
-    user = cursor.fetchone()
-
-    if user:
+    if email in USERS:
         token = ''.join(random.choices(string.digits, k=6))
-        cursor.execute("UPDATE Users SET recovery_token = ? WHERE email = ?", (token, email))
-        conn.commit()
-        conn.close()
+        USERS[email]["recovery_token"] = token
+        
+        # O token real seria enviado por email, mas é printado aqui para testes
         print(f"CÓDIGO DE RECUPERAÇÃO ENVIADO PARA {email}: {token}")
         return jsonify({"success": True, "message": "Código de recuperação enviado!"})
     else:
-        conn.close()
         return jsonify({"success": False, "message": "E-mail não encontrado."})
 
 # Rota para redefinir a senha (Etapa 2)
@@ -120,73 +115,66 @@ def reset_password():
     token = data.get('token')
     new_password = data.get('new_password')
 
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT recovery_token FROM Users WHERE email = ?", (email,))
-    result = cursor.fetchone()
+    user = USERS.get(email)
 
-    if result and result[0] == token:
-        hashed_password = hashpw(new_password.encode('utf-8'), gensalt())
-        cursor.execute("UPDATE Users SET password_hash = ?, recovery_token = NULL WHERE email = ?",
-                       (hashed_password.decode('utf-8'), email))
-        conn.commit()
-        conn.close()
+    if user and user["recovery_token"] == token:
+        user["password_hash"] = hashpw(new_password.encode('utf-8'), gensalt()).decode('utf-8')
+        user["recovery_token"] = None
         return jsonify({"success": True, "message": "Senha redefinida com sucesso!"})
     else:
-        conn.close()
         return jsonify({"success": False, "message": "Token de recuperação inválido."})
+
 
 # Rotas do CRUD para Cursos
 @app.route('/courses', methods=['GET', 'POST'])
 def handle_courses():
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    
+    global COURSES, NEXT_COURSE_ID
+
     if request.method == 'GET':
-        cursor.execute("SELECT id, course_name FROM Courses")
-        courses = [{"id": row[0], "name": row[1]} for row in cursor.fetchall()]
-        conn.close()
-        return jsonify(courses)
+        courses_list = [{"id": course["id"], "name": course["course_name"]} for course in COURSES.values()]
+        return jsonify(courses_list)
     
     if request.method == 'POST':
         data = request.get_json()
         course_name = data.get('name')
         if not course_name:
-            conn.close()
             return jsonify({"success": False, "message": "O nome do curso é obrigatório."}), 400
 
-        try:
-            cursor.execute("INSERT INTO Courses (course_name) VALUES (?)", (course_name,))
-            conn.commit()
-            conn.close()
-            return jsonify({"success": True, "message": "Curso adicionado com sucesso!"})
-        except sqlite3.IntegrityError:
-            conn.close()
-            return jsonify({"success": False, "message": "Erro ao adicionar o curso."}), 500
+        # Adiciona novo curso
+        new_id = NEXT_COURSE_ID
+        COURSES[new_id] = {"id": new_id, "course_name": course_name}
+        NEXT_COURSE_ID += 1
+        return jsonify({"success": True, "message": "Curso adicionado com sucesso!"})
 
 @app.route('/courses/<int:course_id>', methods=['PUT', 'DELETE'])
 def handle_course(course_id):
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
+    global COURSES
+    user_role = request.headers.get('Authorization')
+
+    if user_role not in ['admin', 'editor']:
+        return jsonify({"success": False, "message": "Acesso não autorizado."}), 403
 
     if request.method == 'PUT':
         data = request.get_json()
         course_name = data.get('name')
+
         if not course_name:
-            conn.close()
             return jsonify({"success": False, "message": "O nome do curso é obrigatório."}), 400
-        
-        cursor.execute("UPDATE Courses SET course_name = ? WHERE id = ?", (course_name, course_id))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Curso atualizado com sucesso!"})
+
+        if course_id in COURSES:
+            COURSES[course_id]["course_name"] = course_name
+            return jsonify({"success": True, "message": "Curso atualizado com sucesso!"})
+        else:
+            return jsonify({"success": False, "message": "Curso não encontrado."}), 404
     
     if request.method == 'DELETE':
-        cursor.execute("DELETE FROM Courses WHERE id = ?", (course_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Curso excluído com sucesso!"})
+        if user_role != 'admin':
+            return jsonify({"success": False, "message": "Acesso não autorizado. Apenas administradores podem excluir."}), 403
 
-if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+        if course_id in COURSES:
+            del COURSES[course_id]
+            return jsonify({"success": True, "message": "Curso excluído com sucesso!"})
+        else:
+            return jsonify({"success": False, "message": "Curso não encontrado."}), 404
+
+# A Vercel usará a variável 'app' para rodar a aplicação.
