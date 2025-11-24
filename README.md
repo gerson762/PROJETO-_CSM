@@ -52,11 +52,4 @@ Como o banco de dados é simulado e reinicia a cada deploy, utilize estas contas
 
 ---
 
-## 📦 Como Rodar Localmente
 
-Se você quiser testar o projeto no seu computador antes de subir para o Vercel:
-
-1. **Clone o repositório**
-   ```bash
-   git clone [https://github.com/seu-usuario/PROJETO-_CSM.git](https://github.com/seu-usuario/PROJETO-_CSM.git)
-   cd "PROJETO-_CSM/projeto ADS"
