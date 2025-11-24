@@ -1,53 +1,62 @@
 # 🎓 Educa Prime
 
-**Educa Prime** é um projeto web institucional voltado para educação, oferecendo informações sobre cursos, setores administrativos e suporte pedagógico. A aplicação é desenvolvida com **HTML**, **CSS** e **JavaScript puro**, com foco em estrutura clara, acessibilidade e navegação intuitiva.
+**Educa Prime** é uma plataforma web para gestão educacional desenvolvida como projeto acadêmico. O sistema permite o gerenciamento de cursos, autenticação de usuários com diferentes perfis de acesso e apresentação institucional.
+
+O projeto foi adaptado para rodar em ambiente **Serverless (Vercel)**, utilizando Python (Flask) no backend e JavaScript puro no frontend.
 
 ---
 
-## 📌 Visão Geral
+## 🚀 Funcionalidades
 
-O projeto simula o site de uma instituição educacional fictícia chamada *Educa Prime*. A proposta é apresentar:
+### 🔹 Área Pública
+- **Página Institucional**: Informações sobre a empresa, missão e valores.
+- **Catálogo de Cursos**: Visualização das formações oferecidas.
+- **Páginas Informativas**: Contato, Apoio Pedagógico, RH, etc.
+- **Políticas**: Termos de Uso e Política de Privacidade.
 
-- Informações institucionais e pedagógicas
-- Destaques de cursos oferecidos
-- Sessões específicas para diferentes públicos (pais, alunos, RH, supervisão)
-- Recursos de acessibilidade e consentimento de cookies
-- Links diretos para suporte via WhatsApp e e-mail
-
----
-
-## 📚 Formações e Áreas de Atuação
-
-### ✅ Formações Oferecidas
-
-- **Gestão de Projetos**
-- **Programação em Python**
-- **Marketing Digital**
-- **Design Gráfico**
-
-### 🧰 Linguagens e Ferramentas Abordadas
-
-- **Linguagens**: Python, HTML5, CSS3, JavaScript
-- **Ferramentas e Tecnologias**:
-  - Google Ads, SEO (Marketing Digital)
-  - Figma, Photoshop, Illustrator (Design Gráfico)
-  - Scrum, Kanban, Trello (Gestão de Projetos)
+### 🔹 Área Administrativa (Sistema)
+- **Autenticação**:
+  - Login e Cadastro de novos usuários.
+  - Recuperação de senha (Simulação de envio de token).
+  - Controle de Sessão via LocalStorage.
+- **Gestão de Cursos (CRUD)**:
+  - Listagem de cursos disponíveis.
+  - **Admin**: Pode Criar, Editar e Excluir cursos.
+  - **Editor**: Pode apenas Editar cursos.
+  - **Leitor**: Apenas visualização.
+- **Segurança**:
+  - Senhas criptografadas (Hash SHA-256).
+  - Rotas protegidas por verificação de perfil no Backend.
 
 ---
 
-## 💻 Tecnologias Utilizadas
+## 🛠️ Tecnologias Utilizadas
 
-- **HTML5** – Estrutura semântica e acessível
-- **CSS3** – Design responsivo com uso de variáveis CSS
-- **JavaScript (Vanilla)** – Interatividade e controle de cookies
+- **Frontend**: HTML5, CSS3, JavaScript (Vanilla/Puro).
+- **Backend**: Python, Flask, Flask-Cors.
+- **Banco de Dados**: Simulado em memória (Dicionários Python) para compatibilidade com Vercel Serverless.
+- **Deploy**: Vercel.
 
 ---
 
-## 🌟 Funcionalidades
+## 🔐 Credenciais para Teste
 
-- ✅ Página inicial com destaques de cursos e sobre a empresa
-- ✅ Seções específicas para contato, supervisão, RH, pais e alunos
-- ✅ Menu de navegação acessível com `aria-label`
-- ✅ Consentimento de cookies armazenado via `localStorage`
-- ✅ Termos de Uso e Política de Privacidade inclusos
-- ✅ Design responsivo (mobile friendly)
+Como o banco de dados é simulado e reinicia a cada deploy, utilize estas contas padrão para testar as funcionalidades:
+
+| Perfil | E-mail | Senha | Permissões |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `test@educaprime.com` | `senha123` | Criar, Editar, Excluir |
+| **Leitor** | `leitor@educaprime.com` | `senha123` | Apenas Visualizar |
+
+> **Nota:** Novos usuários cadastrados terão automaticamente o perfil de **Leitor**.
+
+---
+
+## 📦 Como Rodar Localmente
+
+Se você quiser testar o projeto no seu computador antes de subir para o Vercel:
+
+1. **Clone o repositório**
+   ```bash
+   git clone [https://github.com/seu-usuario/PROJETO-_CSM.git](https://github.com/seu-usuario/PROJETO-_CSM.git)
+   cd "PROJETO-_CSM/projeto ADS"
