@@ -1,6 +1,6 @@
-# 🎓 Educa Prime
+# 🎓 Nexus Academy
 
-**Educa Prime** é uma plataforma web para gestão educacional desenvolvida como projeto acadêmico. O sistema permite o gerenciamento de cursos, autenticação de usuários com diferentes perfis de acesso e apresentação institucional.
+**Nexus Academy** é uma plataforma web para gestão educacional desenvolvida como projeto acadêmico. O sistema permite o gerenciamento de cursos, autenticação de usuários com diferentes perfis de acesso e apresentação institucional.
 
 O projeto foi adaptado para rodar em ambiente **Serverless (Vercel)**, utilizando Python (Flask) no backend e JavaScript puro no frontend.
 
@@ -45,11 +45,11 @@ Como o banco de dados é simulado e reinicia a cada deploy, utilize estas contas
 
 | Perfil | E-mail | Senha | Permissões |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `test@educaprime.com` | `senha123` | Criar, Editar, Excluir |
-| **Leitor** | `leitor@educaprime.com` | `senha123` | Apenas Visualizar |
+| **Admin** | `test@nexusacademy.com` | `senha123` | Criar, Editar, Excluir |
+| **Leitor** | `leitor@nexusacademy.com` | `senha123` | Apenas Visualizar |
 
 > **Nota:** Novos usuários cadastrados terão automaticamente o perfil de **Leitor**.
 
 ---
-
-
+   git clone [https://github.com/seu-usuario/PROJETO-_CSM.git](https://github.com/seu-usuario/PROJETO-_CSM.git)
+   cd "PROJETO-_CSM/projeto ADS"
